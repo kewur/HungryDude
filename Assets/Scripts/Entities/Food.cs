@@ -66,7 +66,7 @@ namespace Assets.Scripts.Entities
 
         }
 
-        protected override void OnInteraction()
+        public override void OnInteraction()
         {
 
 

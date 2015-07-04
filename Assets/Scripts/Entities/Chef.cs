@@ -58,10 +58,9 @@ namespace Assets.Scripts.Entities
         protected override void Update()
         {
             base.Update();
-
         }
 
-        protected override void OnInteraction()
+        public override void OnInteraction()
         {
             DropFood();
         }

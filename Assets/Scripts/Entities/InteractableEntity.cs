@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using Assets.Scripts.Entities.Interfaces;
 
 namespace Assets.Scripts.Entities
 {
@@ -13,15 +14,14 @@ namespace Assets.Scripts.Entities
         Right
     }
 
-    public abstract class InteractableEntity : MonoBehaviour
+    public abstract class InteractableEntity : MonoBehaviour, IInteractable
     {
         protected virtual void Update()
         {
 
-
         }
 
-        protected abstract void OnInteraction();
+		public abstract void OnInteraction();
 
         public void FaceOppositeDirection()
         {
