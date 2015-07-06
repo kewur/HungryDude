@@ -12,5 +12,7 @@ namespace Assets.Scripts.Utilities
         public const string Food = "Food";
         public const string ChefLocation = "ChefLocation";
         public const string FoodSlot = "FoodSlot";
+        public const string PooBar = "PooBar";
+        public const string PowerBar = "PowerBar";
     }
 }

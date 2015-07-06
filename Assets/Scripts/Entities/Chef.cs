@@ -1,4 +1,5 @@
 ﻿using Assets.Scripts.Controllers;
+using Assets.Scripts.Entities.Events;
 using Assets.Scripts.Utilities;
 using System;
 using System.Collections.Generic;
@@ -8,9 +9,15 @@ using UnityEngine;
 
 namespace Assets.Scripts.Entities
 {
+    public delegate void ChefInteractedDelegate(ChefInteractedEventArgs e);
+
     [RequireComponent(typeof(SpriteRenderer))]
     public class Chef : InteractableEntity
     {
+        public event ChefInteractedDelegate OnInteraction;
+
+        public static readonly float[] PositionMultipliers = new float[] { 0.5f, 1f, 2f, 3f };
+
         public static float ChefMovespeed = 0.8f;
         public int CurrentPosition;
         public ChefAlignment ChefSide = ChefAlignment.Right;
@@ -44,7 +51,6 @@ namespace Assets.Scripts.Entities
             CarryingFood = Chef.CreateRandomFood();
         }
 
-
         private void InitializeFoodSlot()
         {
             FoodSlotTransform = transform.FindChildbyTag(Tags.FoodSlot);
@@ -60,9 +66,10 @@ namespace Assets.Scripts.Entities
             base.Update();
         }
 
-        public override void OnInteraction()
+        public override void Interact()
         {
-            DropFood();
+            if (OnInteraction != null)
+                OnInteraction(new ChefInteractedEventArgs(this));
         }
 
         public void DropFood()
@@ -128,11 +135,12 @@ namespace Assets.Scripts.Entities
                 Vector3 startLocation = transform.position;
                 Vector3 nextLocation = _ChefLocations.GetLocation(CurrentPosition).position;
                 Vector3 midLocation = nextLocation;
-                midLocation.z = 1;
+                midLocation.z = startLocation.z + 1;
                 midLocation.x = (startLocation.x + nextLocation.x) / 2;
 
                 gameObject.MoveTo(new Vector3[] { startLocation, midLocation, nextLocation }, ChefMovespeed, 0f, EaseType.easeInSine);
                 Invoke("MoveFinishedCallback", ChefMovespeed);
+                Invoke("BackOfTheLineCallback", ChefMovespeed);
             }
             else
                 gameObject.MoveTo(_ChefLocations.GetLocation(CurrentPosition).position, ChefMovespeed, 0f, EaseType.easeInSine);
@@ -143,6 +151,11 @@ namespace Assets.Scripts.Entities
             sprite.sortingOrder = 2;
             CarryingFood.SpriteRenderer.sortingOrder = 3;
             FaceOppositeDirection();
+        }
+
+        private void BackOfTheLineCallback()
+        {
+            CarryingFood = CreateRandomFood();
         }
     }
 }

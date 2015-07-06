@@ -40,6 +40,14 @@ namespace Assets.Scripts.Utilities
                 return ChefAlignment.Left;
         }
 
+        public static bool Equal(this float f, float other, float sensitivity = 0.01f)
+        {
+            if (other < f + sensitivity && other > f - sensitivity)
+                return true;
+
+            return false;
+        }
+
     }
 
     

@@ -21,7 +21,7 @@ namespace Assets.Scripts.Entities
 
         }
 
-		public abstract void OnInteraction();
+		public abstract void Interact();
 
         public void FaceOppositeDirection()
         {

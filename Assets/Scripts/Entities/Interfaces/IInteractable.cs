@@ -5,6 +5,6 @@ namespace Assets.Scripts.Entities.Interfaces
 {
 	public interface IInteractable
 	{
-		void OnInteraction();
+		void Interact();
 	}
 }
