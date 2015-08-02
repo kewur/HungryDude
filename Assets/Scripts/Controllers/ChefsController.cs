@@ -13,6 +13,8 @@ namespace Assets.Scripts.Controllers
     {
         private Transform[] _Locations;
 
+        private ChefGroup _ChefGroup;
+
         private List<Chef> Chefs;
 
         public int LocationCount
@@ -26,6 +28,14 @@ namespace Assets.Scripts.Controllers
             }
         }
 
+        public int BackOfTheLineIndex
+        {
+            get
+            {
+                return _Locations.Length - 1;
+            }
+        }
+
         public Transform BackOfTheLine
         {
             get { return GetLocation(_Locations.Length - 1); }
@@ -36,11 +46,25 @@ namespace Assets.Scripts.Controllers
         private void Awake()
         {
             Chefs = GetComponentsInChildren<Chef>().ToList();
+            _ChefGroup = GetComponentInParent<ChefGroup>();
 
             _Locations = transform.GetChildrenWithTag(Tags.ChefLocation);
             _Locations = _Locations.OrderBy(item => int.Parse(item.name)).ToArray();
+        }
 
+        private void OnEnable()
+        {
             StartCoroutine(MoveChefsCoroutine());
+        }
+
+        private void OnDisable()
+        {
+            StopCoroutine(MoveChefsCoroutine());
+        }
+
+        public Chef GetMirrorChef(Chef chef)
+        {
+           return _ChefGroup.GetMirrorController(chef.ChefSide).GetChefAtLocation(chef.CurrentPosition);
         }
 
         public Transform GetLocation(int index)
@@ -73,7 +97,7 @@ namespace Assets.Scripts.Controllers
             {
                 yield return new WaitForSeconds(GameController.Instance.ChefMoveInterval);
                 foreach (Chef chef in Chefs)
-                    if(!MovementStopped) chef.Move();
+                    if(!MovementStopped) chef.MoveRight();
             }
         }
 
@@ -83,7 +107,7 @@ namespace Assets.Scripts.Controllers
         /// <param name="alignment"></param>
         /// <param name="location"></param>
         /// <returns>null if not present or the Chef at Chef.CurrentPosition == location</returns>
-        public Chef GetChefAtLocation(ChefAlignment alignment, int location)
+        public Chef GetChefAtLocation(int location)
         {
             //if the dictionary doesn't have the alignment or the list is null or out of bounds return null
             if (Chefs == null || Chefs.Count - 1 < location)

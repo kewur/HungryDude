@@ -24,6 +24,8 @@ namespace Assets.Scripts.Entities
     [RequireComponent(typeof(SpriteRenderer))]
     public class Food : InteractableEntity
     {
+        private bool _Dropping = false;
+
         public event FoodInteractDelegate OnInteraction;
 
         public const float ZPosition = -0.1f;
@@ -80,7 +82,7 @@ namespace Assets.Scripts.Entities
             SpriteRenderer = GetComponent<SpriteRenderer>();
             SpriteRenderer.sortingOrder = 2;
 
-            if (GameController.PooEnabled && UnityEngine.Random.Range(0, 100) < GameController.PooChance)
+            if (GameController.Instance.PooEnabled && UnityEngine.Random.Range(0, 100) < GameController.PooChance)
                 FoodType = FoodTypes.Poo;
             else
                 FoodType = (FoodTypes)UnityEngine.Random.Range(0, (int)Enum.GetValues(typeof(FoodTypes)).Cast<FoodTypes>().Last());
@@ -95,12 +97,19 @@ namespace Assets.Scripts.Entities
 
         public override void Interact()
         {
+            if (Player.Instance.Eating)
+                DropFood();
+
             if (OnInteraction != null)
                 OnInteraction(new FoodInteractedEventArgs(this));
         }
 
         public void DropFood()
         {
+            if (_Dropping)
+                return;
+
+            _Dropping = true;
             transform.parent = null;
             gameObject.AddComponent<Rigidbody>();
             gameObject.layer = Layers.NoCollision;
@@ -111,7 +120,13 @@ namespace Assets.Scripts.Entities
 
         void OnDestroy()
         {
-            print("Destroy");
+            
+        }
+
+        public void Eat()
+        {
+            
+            Destroy(gameObject);
         }
     }
 }

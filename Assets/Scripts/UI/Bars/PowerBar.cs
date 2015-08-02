@@ -5,7 +5,7 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Assets.Scripts.GameLogic.Bars
+namespace Assets.Scripts.UI.Bars
 {
     public class PowerBar : BarBase
     {

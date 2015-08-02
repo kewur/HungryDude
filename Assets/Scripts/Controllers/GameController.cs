@@ -1,6 +1,6 @@
 ﻿using Assets.Scripts.Entities;
 using Assets.Scripts.GameLogic;
-using Assets.Scripts.GameLogic.Bars;
+using Assets.Scripts.UI.Bars;
 using Assets.Scripts.Utilities;
 using Assets.Scripts.Utilities.Collections;
 using System;
@@ -17,8 +17,9 @@ namespace Assets.Scripts.Controllers
     public class GameController : MonoBehaviour, INotifyPropertyChanged
     {
 
-        public const float BASE_SCORE_EFFECTOR = 20f;
+        public const float BASE_SCORE_EFFECTOR = 5f;
         public const float PRIMARY_MULTIPLIER = 2f;
+        public const float POO_MULTIPLIER = 16f;
 
         private static GameController _Instance = null;
         public static GameController Instance
@@ -33,6 +34,25 @@ namespace Assets.Scripts.Controllers
                 }
 
                 return _Instance;
+            }
+        }
+
+        public const string EatMirroredFoodsPropertyName = "EatMirroredFoods";
+        private bool _EatMirroredFoods = true;
+        public bool EatMirroredFoods
+        {
+            get
+            {
+                return _EatMirroredFoods;
+            }
+
+            set
+            {
+                if (_EatMirroredFoods == value)
+                    return;
+
+                _EatMirroredFoods = value;
+                RaisePropertyChanged(EatMirroredFoodsPropertyName);
             }
         }
 
@@ -111,6 +131,21 @@ namespace Assets.Scripts.Controllers
             }
         }
 
+        public const string LevelAdvanceHighScorePropertyName = "LevelAdvanceHighScore";
+        private int _LevelAdvanceHighScore = 1500;
+        public int LevelAdvanceHighScore
+        {
+            get { return _LevelAdvanceHighScore; }
+            set
+            {
+                if (_LevelAdvanceHighScore == value)
+                    return;
+
+                _LevelAdvanceHighScore = value;
+                RaisePropertyChanged(LevelAdvanceHighScorePropertyName);
+            }
+        }
+
         public const string ChefMoveIntervalPropertyName = "ChefMoveInterval";
         private float _ChefMoveInterval = 1.5f;
         public float ChefMoveInterval
@@ -126,14 +161,75 @@ namespace Assets.Scripts.Controllers
             }
         }
 
-        public void Awake()
+        public static int PooChance = 15;
+        public int PooEatenCount = 0;
+        public const string PooEnabledPropertyName = "PooEnabled";
+        private bool _PooEnabled = true;
+        public bool PooEnabled
         {
-            Invoke("keke", 2f);
+            get { return _PooEnabled; }
+            set
+            {
+                if (_PooEnabled == value)
+                    return;
+
+                _PooEnabled = value;
+                RaisePropertyChanged(PooEnabledPropertyName);
+                if (PooEnabled)
+                    StartCoroutine(PooDecayRoutine());
+                else
+                    StopCoroutine(PooDecayRoutine());
+            }
         }
 
-        private void  keke()
+        public const string PooDecayRatePropertyName = "PooDecayRate";
+        private float _PooDecayRate = 1f;
+        public float PooDecay
         {
-            HighScore = 500;
+            get { return _PooDecayRate; }
+            set
+            {
+                if (_PooDecayRate == value)
+                    return;
+
+                _PooDecayRate = value;
+                RaisePropertyChanged(PooDecayRatePropertyName);
+            }
+        }
+
+        public IEnumerator PooDecayRoutine()
+        {
+            
+            yield return new WaitForEndOfFrame();
+
+        }
+
+        public const string CurrentObjectivesPropertyName = "CurrentObjectives";
+        private ObservableCollection<Tuple<FoodTypes, int>> _CurrentObjectives = new ObservableCollection<Tuple<FoodTypes, int>>();
+        public ObservableCollection<Tuple<FoodTypes, int>> CurrentObjectives
+        {
+            get { return _CurrentObjectives; }
+            set
+            {
+                if (_CurrentObjectives == value)
+                    return;
+
+                _CurrentObjectives = value;
+
+                if(_CurrentObjectives != null)
+                    _CurrentObjectives.CollectionChanged += _CurrentObjective_CollectionChanged;
+
+                RaisePropertyChanged(CurrentObjectivesPropertyName);
+            }
+        }
+
+        private void _CurrentObjective_CollectionChanged(ICollection source, NotifyCollectionChangedEventArgs e)
+        {
+            RaisePropertyChanged(CurrentObjectivesPropertyName);
+        }
+
+        public void Awake()
+        {
         }
 
         public void AddScore(int score)
@@ -146,31 +242,21 @@ namespace Assets.Scripts.Controllers
             HighScore -= score;
         }
 
-        public static int PooChance = 15;
-        public static bool PooEnabled = true;
-
-        public const string CurrentObjectivePropertyName = "CurrentObjective";
-        private ObservableCollection<Tuple<FoodTypes, int>> _CurrentObjective = new ObservableCollection<Tuple<FoodTypes, int>>();
-        public ObservableCollection<Tuple<FoodTypes, int>> CurrentObjective
+        private void PenaltyFoodEaten(Food food, float effectiveness, bool primary)
         {
-            get { return _CurrentObjective; }
-            set
+            if (food.FoodType == FoodTypes.Poo)
             {
-                if (_CurrentObjective == value)
-                    return;
-
-                _CurrentObjective = value;
-
-                if(_CurrentObjective != null)
-                    _CurrentObjective.CollectionChanged += _CurrentObjective_CollectionChanged;
-
-                RaisePropertyChanged(CurrentObjectivePropertyName);
+                //do poo stuff
+                PooEatenCount++;
+                PooBarSlider.TargetValue += POO_MULTIPLIER * PooEatenCount;
             }
+            else
+                HighScore -= (int)(effectiveness * BASE_SCORE_EFFECTOR * (primary && EatMirroredFoods ? PRIMARY_MULTIPLIER : 1f));
         }
 
-        private void _CurrentObjective_CollectionChanged(ICollection source, NotifyCollectionChangedEventArgs e)
+        private void ObjectiveFoodEaten(Food food, float effectiveness, bool primary)
         {
-            RaisePropertyChanged(CurrentObjectivePropertyName);
+
         }
 
         /// <summary>
@@ -179,9 +265,11 @@ namespace Assets.Scripts.Controllers
         /// <param name="food"></param>
         /// <param name="effectiveness"></param>
         /// <param name="primary"></param>
-        public void FoodEaten(Food food, float effectiveness, bool primary)
+        public void FoodEaten(Chef sender, Food food, bool primary)
         {
-            foreach (Tuple<FoodTypes, int> t in CurrentObjective)
+            float effectiveness = BASE_SCORE_EFFECTOR * sender.CurrentPosition;
+
+            foreach (Tuple<FoodTypes, int> t in CurrentObjectives)
                 if (food.FoodType == t.Item1)
                 {
                     ObjectiveFoodEaten(food, effectiveness, primary);
@@ -194,20 +282,11 @@ namespace Assets.Scripts.Controllers
             PenaltyFoodEaten(food, effectiveness, primary);
         }
 
-        private void PenaltyFoodEaten(Food food, float effectiveness, bool primary)
-        {
-            if(food.FoodType == FoodTypes.Poo)
-            {
-               //do poo stuff
-            }
-            else
-                HighScore -= (int)(effectiveness * BASE_SCORE_EFFECTOR * (primary ? 1f : PRIMARY_MULTIPLIER));
-        }
-
-        private void ObjectiveFoodEaten(Food food, float effectiveness, bool primary)
+        public void CreateObjectives()
         {
 
         }
+       
 
         public event PropertyChangedEventHandler PropertyChanged;
         private void RaisePropertyChanged(string propertyName)
