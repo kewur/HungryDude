@@ -6,6 +6,8 @@ using UnityEngine;
 using Assets.Scripts.Utilities;
 using Assets.Scripts.Entities;
 using System.Collections;
+using Assets.Scripts.Entities.Events;
+using Assets.Scripts.Utilities.Invoker;
 
 namespace Assets.Scripts.Controllers
 {
@@ -14,19 +16,7 @@ namespace Assets.Scripts.Controllers
         private Transform[] _Locations;
 
         private ChefGroup _ChefGroup;
-
         private List<Chef> Chefs;
-
-        public int LocationCount
-        {
-            get
-            {
-                if (_Locations == null)
-                    return 0;
-
-                return _Locations.Length;
-            }
-        }
 
         public int BackOfTheLineIndex
         {
@@ -36,30 +26,26 @@ namespace Assets.Scripts.Controllers
             }
         }
 
-        public Transform BackOfTheLine
-        {
-            get { return GetLocation(_Locations.Length - 1); }
-        }
-
-        private bool MovementStopped;
+        private bool MovementStopped = true;
 
         private void Awake()
         {
             Chefs = GetComponentsInChildren<Chef>().ToList();
+
+            foreach (Chef c in Chefs)
+                c.OnInteraction += ChefInteracted;
+
             _ChefGroup = GetComponentInParent<ChefGroup>();
 
             _Locations = transform.GetChildrenWithTag(Tags.ChefLocation);
             _Locations = _Locations.OrderBy(item => int.Parse(item.name)).ToArray();
         }
 
-        private void OnEnable()
+        private void ChefInteracted(ChefInteractedEventArgs e)
         {
-            StartCoroutine(MoveChefsCoroutine());
-        }
-
-        private void OnDisable()
-        {
-            StopCoroutine(MoveChefsCoroutine());
+            Chef c = e.Source as Chef;
+            MoveAllChefs();
+            _ChefGroup.GetMirrorController(c.ChefSide).MoveAllChefs();
         }
 
         public Chef GetMirrorChef(Chef chef)
@@ -70,35 +56,9 @@ namespace Assets.Scripts.Controllers
         public Transform GetLocation(int index)
         {
             if (index > _Locations.Length - 1)
-            {
-                Debug.LogError("Out of range");
                 return null;
-            }
 
             return _Locations[index];
-        }
-
-        public void StopChefs()
-        {
-            MovementStopped = true;
-            StopCoroutine(MoveChefsCoroutine());
-        }
-
-        public void MoveChefs()
-        {
-            MovementStopped = false;
-            StopCoroutine(MoveChefsCoroutine());
-            StartCoroutine(MoveChefsCoroutine());
-        }
-
-        private IEnumerator MoveChefsCoroutine()
-        {
-            while (!GameController.Instance.GamePaused)
-            {
-                yield return new WaitForSeconds(GameController.Instance.ChefMoveInterval);
-                foreach (Chef chef in Chefs)
-                    if(!MovementStopped) chef.MoveRight();
-            }
         }
 
         /// <summary>
@@ -109,19 +69,38 @@ namespace Assets.Scripts.Controllers
         /// <returns>null if not present or the Chef at Chef.CurrentPosition == location</returns>
         public Chef GetChefAtLocation(int location)
         {
-            //if the dictionary doesn't have the alignment or the list is null or out of bounds return null
-            if (Chefs == null || Chefs.Count - 1 < location)
-                return null;
+            foreach (Chef c in Chefs)
+                if (c.CurrentPosition == location)
+                    return c;
 
-            foreach (Chef chef in Chefs)
-            {
-                if (chef.CurrentPosition == location)
-                    return chef;
-            }
-
+            Debug.LogError("No chef at this location");
             return null;
         }
 
+        public void MoveAllChefs()
+        {
+            MoveChefs(BackOfTheLineIndex, 0);
+        }
 
+        public void MoveChefsBehindThis(Chef c)
+        {
+            if(c.CurrentPosition != BackOfTheLineIndex)
+                MoveChefs(BackOfTheLineIndex, c.CurrentPosition + 1);
+        }
+
+        private void MoveChefs(int startIndex, int endIndex)
+        {
+            if (!MovementStopped)
+                return;
+
+            MovementStopped = false;
+            Invoker.WaitThanCallback(() => { MovementStopped = true; }, Chef.ChefMovespeed);
+
+            if (!this.MovementStopped)
+            {
+                    for (int i = startIndex; i >= endIndex; i--)
+                        if (!MovementStopped) GetChefAtLocation(i).Move();
+            }
+        }
     }
 }

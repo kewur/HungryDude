@@ -1,6 +1,7 @@
 ﻿using Assets.Scripts.Controllers;
 using Assets.Scripts.Entities.Events;
 using Assets.Scripts.Utilities;
+using Assets.Scripts.Utilities.Invoker;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,16 +17,12 @@ namespace Assets.Scripts.Entities
     {
         public event ChefInteractedDelegate OnInteraction;
 
-        public static readonly float[] PositionMultipliers = new float[] { 0.5f, 1f, 2f, 3f };
-
         public static float ChefMovespeed = 0.8f;
         public int CurrentPosition;
         public ChefAlignment ChefSide = ChefAlignment.Right;
         private ChefsController _ChefLocations;
 
-
-        private SpriteRenderer sprite;
-
+        private SpriteRenderer _Sprite;
         private Transform FoodSlotTransform;
 
         private Food _CarryingFood;
@@ -55,10 +52,10 @@ namespace Assets.Scripts.Entities
         {
             _ChefLocations = GetComponentInParent<ChefsController>();
 
-            sprite = GetComponent<SpriteRenderer>();
+            _Sprite = GetComponent<SpriteRenderer>();
             InitializeFoodSlot();
 
-            CarryingFood = Chef.CreateRandomFood();
+            CarryingFood = CreateRandomFood();
         }
 
         private void InitializeFoodSlot()
@@ -84,7 +81,7 @@ namespace Assets.Scripts.Entities
 
         public void MoveToTheBack()
         {
-
+            MoveToPosition(_ChefLocations.BackOfTheLineIndex);
         }
 
         public void MoveToPosition(int newPosition)
@@ -94,9 +91,8 @@ namespace Assets.Scripts.Entities
 
             if (newPosition > CurrentPosition)
             {
-                
                 //starts from one :p
-                sprite.sortingOrder = 0;
+                _Sprite.sortingOrder = 0;
                 if(CarryingFood != null)
                     CarryingFood.SpriteRenderer.sortingOrder = 1;
 
@@ -128,8 +124,7 @@ namespace Assets.Scripts.Entities
                 CurrentPosition = newPosition;
         }
 
-
-        public void MoveRight()
+        public void Move()
         {
             int newPosition = CurrentPosition - 1;
             MoveToPosition(newPosition);
@@ -142,7 +137,9 @@ namespace Assets.Scripts.Entities
 
         private void FoodEaten(FoodInteractedEventArgs e)
         {
+            _ChefLocations.MoveChefsBehindThis(this);
             MoveToTheBack();
+            
             if (Player.Instance.Eating)
                 DropFood();
             else
@@ -152,7 +149,7 @@ namespace Assets.Scripts.Entities
             }
         }
 
-        private void DropFood()
+        public void DropFood()
         {
             
         }
@@ -174,13 +171,13 @@ namespace Assets.Scripts.Entities
             if (CurrentPosition < location)
             {
                 FaceOppositeDirection();
-                Invoke("MoveFinishedCallback", ChefMovespeed);
+                Invoker.WaitThanCallback(MoveFinishedCallback, ChefMovespeed);
             }
         }
 
         private void MoveFinishedCallback()
         {
-            sprite.sortingOrder = 2;
+            _Sprite.sortingOrder = 2;
             
             FaceOppositeDirection();
 

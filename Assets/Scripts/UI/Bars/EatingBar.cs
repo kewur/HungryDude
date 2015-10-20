@@ -18,10 +18,10 @@ namespace Assets.Scripts.UI.Bars
         {
             if (e.PropertyName == Player.EatingPropertyName)
             {
-                Hide = !Player.Instance.Eating;
+                IsHidden = !Player.Instance.Eating;
 
                 if(Player.Instance.Eating)
-                    FillUp(Player.Instance.EatingSpeed, ()=> { Hide = true; });
+                    FillUp(Player.Instance.EatingSpeed, ()=> { IsHidden = true; });
             }
         }
 

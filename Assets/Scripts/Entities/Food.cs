@@ -38,8 +38,7 @@ namespace Assets.Scripts.Entities
             private set
             {
                 _FoodType = value;
-
-                SpriteRenderer.sprite = Resources.Load<Sprite>(_FoodType.ToString());
+                SpriteRenderer.sprite = GetFoodImage(_FoodType);
             }
         }
 
@@ -127,6 +126,16 @@ namespace Assets.Scripts.Entities
         {
             
             Destroy(gameObject);
+        }
+
+        public static Sprite GetFoodImage(FoodTypes foodType)
+        {
+            return Resources.Load<Sprite>(foodType.ToString());
+        }
+
+        public static Texture GetFoodImageUI(FoodTypes foodType)
+        {
+            return Resources.Load<Texture>(foodType.ToString() + "UI");
         }
     }
 }

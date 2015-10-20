@@ -26,7 +26,6 @@ namespace Assets.Scripts.Controllers
             }
         }
 
-
         float _LastClickTime = float.MinValue;
         const float DoubleClickInterval = 1.0f;
         const float InputRayMaxDistance = 50f;

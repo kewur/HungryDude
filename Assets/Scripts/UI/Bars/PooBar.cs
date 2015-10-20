@@ -21,7 +21,7 @@ namespace Assets.Scripts.UI.Bars
 
             if (!GameController.Instance.PooEnabled)
             {
-                Hide = true;
+                Hide();
                 gameObject.transform.localScale = Vector3.zero;
             }
 
@@ -30,7 +30,7 @@ namespace Assets.Scripts.UI.Bars
 
         public void keke()
         {
-            Hide = false;
+            Show();
         }
 
         private void GameController_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -38,9 +38,9 @@ namespace Assets.Scripts.UI.Bars
             if(e.PropertyName == GameController.PooEnabledPropertyName)
             {
                 if (GameController.Instance.PooEnabled)
-                    Hide = false;
+                    Show();
                 else
-                    Hide = true;
+                    Hide();
             }
         }
     }

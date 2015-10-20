@@ -56,7 +56,7 @@ public class Player : MonoBehaviour, INotifyPropertyChanged
     }
 
     public const string EatingSpeedPropertyName = "EatingSpeed";
-    private float _EatingSpeed = 1f;
+    private float _EatingSpeed = 0.1f;
     public float EatingSpeed
     {
         get { return _EatingSpeed; }

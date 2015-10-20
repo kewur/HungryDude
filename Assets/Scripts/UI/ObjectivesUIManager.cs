@@ -1,4 +1,7 @@
 ﻿using Assets.Scripts.Controllers;
+using Assets.Scripts.Entities;
+using Assets.Scripts.GameLogic;
+using Assets.Scripts.Utilities.Collections;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,61 +12,52 @@ namespace Assets.Scripts.UI
 {
     public class ObjectivesUIManager : UIBase
     {
-        public RawImageUI[] DoubleObjectives;
+        private RawImageUI[] _ObjectiveImages;
 
-        private bool _HideDoubleObjectives = false;
-        public bool HideDoubleObjectives
-        {
-            get { return _HideDoubleObjectives; }
-            set
-            {
-                if (_HideDoubleObjectives == value)
-                    return;
-
-                _HideDoubleObjectives = value;
-
-                if (!_HideDoubleObjectives) //don't let the other objectives get in the way. Hide if this is becoming visible.
-                    HideSingleObjective = true;
-
-                foreach (RawImageUI img in DoubleObjectives)
-                    img.Hide = value;
-            }
-        }
-
-        private bool _HideSingleObjective = false;
-        public bool HideSingleObjective
-        {
-            get { return _HideSingleObjective; }
-            set
-            {
-                if (_HideSingleObjective == value)
-                    return;
-
-                _HideSingleObjective = value;
-
-                if (!_HideSingleObjective) //don't let the other objectives get in the way. Hide if this is becoming visible.
-                    HideDoubleObjectives = true;
-
-                SingleObjective.Hide = value;
-            }
-        }
-
-        public RawImageUI SingleObjective;
+        public FoodTypes objectif;
 
         protected override void Awake()
         {
-            GameController.Instance.PropertyChanged += GameController_PropertyChanged;
+            _ObjectiveImages = GetComponentsInChildren<RawImageUI>().OrderBy(obj => int.Parse(obj.name)).ToArray();
+
+            GameController.Instance.CurrentObjectives.CollectionChanged += CurrentObjectives_CollectionChanged;
         }
 
-        private void GameController_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        private void CurrentObjectives_CollectionChanged(System.Collections.ICollection source, Utilities.Collections.NotifyCollectionChangedEventArgs e)
         {
-            if(e.PropertyName == GameController.CurrentObjectivesPropertyName)
+            if (e.Action == NotifyCollectionChangedAction.Add)
             {
-                if(GameController.Instance.CurrentObjectives == null)
+                for (int i = 0; i < e.NewItems.Count; i++)
                 {
+                    if (_ObjectiveImages.Length < i)
+                        return;
 
+                    _ObjectiveImages[i].Texture = Food.GetFoodImage(((FoodObjective)e.NewItems[i]).FoodType).texture;
+                     objectif = ((FoodObjective)e.NewItems[i]).FoodType;
+                    _ObjectiveImages[i].Show();
+                    ((FoodObjective)e.NewItems[i]).PropertyChanged += ObjectivesUIManager_PropertyChanged;
                 }
             }
+
+            else if (e.Action == NotifyCollectionChangedAction.Remove)
+            {
+                for (int i = 0; i < e.OldItems.Count; i++)
+                {
+                    ((FoodObjective)e.NewItems[i]).PropertyChanged -= ObjectivesUIManager_PropertyChanged;
+                }
+            }
+            else if (e.Action == NotifyCollectionChangedAction.Reset)
+            {
+                for (int i = 0; i < e.OldItems.Count; i++)
+                {
+                    ((FoodObjective)e.NewItems[i]).PropertyChanged -= ObjectivesUIManager_PropertyChanged;
+                }
+            }
+        }
+
+        private void ObjectivesUIManager_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            
         }
     }
 }

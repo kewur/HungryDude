@@ -11,22 +11,32 @@ namespace Assets.Scripts.UI
         public bool StartHidden = false;
 
         private Vector3 VisibleScale = Vector3.one;
-        private bool _Hide = false;
-        public bool Hide
+        private bool _IsHidden = false;
+        public bool IsHidden
         {
-            get { return _Hide; }
-            set
+            get { return _IsHidden; }
+            protected set
             {
-                if (_Hide == value)
+                if (_IsHidden == value)
                     return;
 
-                _Hide = value;
+                _IsHidden = value;
 
-                if (_Hide)
+                if (_IsHidden)
                     gameObject.ScaleTo(Vector3.zero, 0.8f, 0f);
                 else
                     gameObject.ScaleTo(VisibleScale, 0.8f, 0f);
             }
+        }
+
+        public void Show()
+        {
+            IsHidden = false;
+        }
+
+        public void Hide()
+        {
+            IsHidden = true;
         }
 
         protected virtual void Awake()
@@ -36,7 +46,7 @@ namespace Assets.Scripts.UI
             if (StartHidden)
             {
                 transform.localScale = Vector3.zero;
-                _Hide = StartHidden;
+                _IsHidden = StartHidden;
             }
         }
 

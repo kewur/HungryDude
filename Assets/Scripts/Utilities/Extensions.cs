@@ -48,6 +48,17 @@ namespace Assets.Scripts.Utilities
             return false;
         }
 
+        public static T RandomElement<T>(this IEnumerable<T> enumerable)
+        {
+            return enumerable.RandomElementUsing(new System.Random());
+        }
+
+        public static T RandomElementUsing<T>(this IEnumerable<T> enumerable, System.Random rand)
+        {
+            int index = rand.Next(0, enumerable.Count());
+            return enumerable.ElementAt(index);
+        }
+
     }
 
     

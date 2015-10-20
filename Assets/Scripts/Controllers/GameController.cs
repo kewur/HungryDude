@@ -12,6 +12,7 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 
+
 namespace Assets.Scripts.Controllers
 {
     public class GameController : MonoBehaviour, INotifyPropertyChanged
@@ -205,8 +206,8 @@ namespace Assets.Scripts.Controllers
         }
 
         public const string CurrentObjectivesPropertyName = "CurrentObjectives";
-        private ObservableCollection<Tuple<FoodTypes, int>> _CurrentObjectives = new ObservableCollection<Tuple<FoodTypes, int>>();
-        public ObservableCollection<Tuple<FoodTypes, int>> CurrentObjectives
+        private ObservableCollection<FoodObjective> _CurrentObjectives = new ObservableCollection<FoodObjective>();
+        public ObservableCollection<FoodObjective> CurrentObjectives
         {
             get { return _CurrentObjectives; }
             set
@@ -228,8 +229,9 @@ namespace Assets.Scripts.Controllers
             RaisePropertyChanged(CurrentObjectivesPropertyName);
         }
 
-        public void Awake()
+        public void Start()
         {
+            CreateObjectives();
         }
 
         public void AddScore(int score)
@@ -244,19 +246,13 @@ namespace Assets.Scripts.Controllers
 
         private void PenaltyFoodEaten(Food food, float effectiveness, bool primary)
         {
-            if (food.FoodType == FoodTypes.Poo)
-            {
-                //do poo stuff
-                PooEatenCount++;
-                PooBarSlider.TargetValue += POO_MULTIPLIER * PooEatenCount;
-            }
-            else
-                HighScore -= (int)(effectiveness * BASE_SCORE_EFFECTOR * (primary && EatMirroredFoods ? PRIMARY_MULTIPLIER : 1f));
+            HighScore -= (int)(effectiveness * BASE_SCORE_EFFECTOR * (primary && EatMirroredFoods ? PRIMARY_MULTIPLIER : 1f));
         }
 
         private void ObjectiveFoodEaten(Food food, float effectiveness, bool primary)
         {
-
+            CurrentObjectives.Where(f => f.FoodType == food.FoodType).ToList().ForEach(f => f.Achieved = true);
+            HighScore += (int)(effectiveness * BASE_SCORE_EFFECTOR * (primary && EatMirroredFoods ? PRIMARY_MULTIPLIER : 1f));
         }
 
         /// <summary>
@@ -269,22 +265,21 @@ namespace Assets.Scripts.Controllers
         {
             float effectiveness = BASE_SCORE_EFFECTOR * sender.CurrentPosition;
 
-            foreach (Tuple<FoodTypes, int> t in CurrentObjectives)
-                if (food.FoodType == t.Item1)
-                {
-                    ObjectiveFoodEaten(food, effectiveness, primary);
-                    if (food.FoodType == FoodTypes.Poo)
-                        PenaltyFoodEaten(food, effectiveness, primary);
-
-                    return;
-                }
-
-            PenaltyFoodEaten(food, effectiveness, primary);
+            if (CurrentObjectives.Any(t =>  t.FoodType == food.FoodType))
+                ObjectiveFoodEaten(food, effectiveness, primary);
+            else
+                PenaltyFoodEaten(food, effectiveness, primary);
         }
 
         public void CreateObjectives()
         {
+            CurrentObjectives.Clear();
 
+            List<FoodTypes> possibleObjectives = Enum.GetValues(typeof(FoodTypes)).Cast<FoodTypes>().ToList();
+            possibleObjectives.Remove(FoodTypes.Poo);
+
+            FoodObjective foodObj = new FoodObjective(possibleObjectives.RandomElement());
+            CurrentObjectives.Add(foodObj);
         }
        
 
