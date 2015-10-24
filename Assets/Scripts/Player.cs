@@ -6,6 +6,13 @@ using Assets.Scripts.Entities;
 using Assets.Scripts.Utilities;
 using Assets.Scripts.Controllers;
 
+
+public enum ScreenSide
+{
+    Left,
+    Right
+}
+
 public class Player : MonoBehaviour, INotifyPropertyChanged
 {
     public event PropertyChangedEventHandler PropertyChanged;

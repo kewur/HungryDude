@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using UnityEngine;
 
@@ -57,6 +58,54 @@ namespace Assets.Scripts.Utilities
         {
             int index = rand.Next(0, enumerable.Count());
             return enumerable.ElementAt(index);
+        }
+
+        public static void Shift<T>(this IList<T> list, int start, int end, bool toRight)
+        {
+            // a b c d e
+            // b c d e a
+
+            //a b c d e
+            //e a b c d
+
+            //b c d e a
+
+            if (list == null || list.Count < 2)
+                return;
+
+            if (toRight)
+                for (int i = end; i >= start; i--)
+                    list.Switch(i, i - 1);
+
+            else
+                for (int i = start; i < end; i++)
+                    list.Switch(i, i + 1);
+
+        }
+
+        public static void Shift<T>(this IList<T> list, bool toRight)
+        {
+            if (list == null || list.Count < 2)
+                return;
+
+            if (toRight)
+                for (int i = 0; i < list.Count; i++)
+                    list.Switch(i, i + 1);
+
+            else
+                for (int i = list.Count - 1; i >= 0; i--)
+                    list.Switch(i, i - 1);
+
+        }
+
+        public static void Switch<T>(this IList<T> list, int index1, int index2)
+        {
+            if (Math.Min(index1, index2) < 0 || list.Count <= Math.Max(index1, index2))
+                return;
+
+            T tmp = list[index1];
+            list[index1] = list[index2];
+            list[index2] = tmp;
         }
 
     }

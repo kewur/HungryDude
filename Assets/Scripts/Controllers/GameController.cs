@@ -162,7 +162,7 @@ namespace Assets.Scripts.Controllers
             }
         }
 
-        public static int PooChance = 15;
+        public static int PooChance = 5;
         public int PooEatenCount = 0;
         public const string PooEnabledPropertyName = "PooEnabled";
         private bool _PooEnabled = true;
@@ -263,7 +263,7 @@ namespace Assets.Scripts.Controllers
         /// <param name="primary"></param>
         public void FoodEaten(Chef sender, Food food, bool primary)
         {
-            float effectiveness = BASE_SCORE_EFFECTOR * sender.CurrentPosition;
+            float effectiveness = BASE_SCORE_EFFECTOR;
 
             if (CurrentObjectives.Any(t =>  t.FoodType == food.FoodType))
                 ObjectiveFoodEaten(food, effectiveness, primary);
@@ -281,7 +281,6 @@ namespace Assets.Scripts.Controllers
             FoodObjective foodObj = new FoodObjective(possibleObjectives.RandomElement());
             CurrentObjectives.Add(foodObj);
         }
-       
 
         public event PropertyChangedEventHandler PropertyChanged;
         private void RaisePropertyChanged(string propertyName)
@@ -289,6 +288,5 @@ namespace Assets.Scripts.Controllers
             if (PropertyChanged != null)
                 PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
         }
-
     }
 }

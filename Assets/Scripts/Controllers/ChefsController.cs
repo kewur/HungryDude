@@ -13,94 +13,161 @@ namespace Assets.Scripts.Controllers
 {
     public class ChefsController : MonoBehaviour
     {
-        private Transform[] _Locations;
+        private Transform ClosestSlot;
+        private List<Transform> ChefLocations = new List<Transform>(); //0 is closestSlot, last item is the farthest.
+        private GameObject ChefLocationsGroup;
 
-        private ChefGroup _ChefGroup;
-        private List<Chef> Chefs;
+        List<Chef> _Chefs = new List<Chef>();
+        public List<Chef> Chefs
+        {
+            get { return _Chefs; }
+            set
+            {
+                if (_Chefs == value)
+                    return;
 
-        public int BackOfTheLineIndex
+                _Chefs = value;
+            }
+        }
+
+        public ScreenSide Side
         {
             get
             {
-                return _Locations.Length - 1;
+                if (transform.position.x < Player.Instance.transform.position.x)
+                    return ScreenSide.Left;
+                else
+                    return ScreenSide.Right;
             }
         }
-
-        private bool MovementStopped = true;
 
         private void Awake()
         {
+            InitializeClosestTransfrorm();
+            UpdateChefLocations();
+
             Chefs = GetComponentsInChildren<Chef>().ToList();
 
-            foreach (Chef c in Chefs)
-                c.OnInteraction += ChefInteracted;
+            if(Side ==  ScreenSide.Left)
+                Chefs = Chefs.OrderByDescending((c) => (c.transform.position.x)).ToList();
+            else
+                Chefs = Chefs.OrderBy((c) => (c.transform.position.x)).ToList();
 
-            _ChefGroup = GetComponentInParent<ChefGroup>();
 
-            _Locations = transform.GetChildrenWithTag(Tags.ChefLocation);
-            _Locations = _Locations.OrderBy(item => int.Parse(item.name)).ToArray();
+            if (Chefs.Count != ChefLocations.Count)
+                Debug.LogError("Chef count and location count is different");
+
+            for (int i = 0; i < ChefLocations.Count; i++)
+                Chefs[i].TargetPosition = ChefLocations[i];
+
+            Invoker.CallWithIntervals(()=> 
+            { MoveAll(); }, int.MaxValue, 3f);
         }
 
-        private void ChefInteracted(ChefInteractedEventArgs e)
+        private void InitializeClosestTransfrorm()
         {
-            Chef c = e.Source as Chef;
-            MoveAllChefs();
-            _ChefGroup.GetMirrorController(c.ChefSide).MoveAllChefs();
-        }
-
-        public Chef GetMirrorChef(Chef chef)
-        {
-           return _ChefGroup.GetMirrorController(chef.ChefSide).GetChefAtLocation(chef.CurrentPosition);
-        }
-
-        public Transform GetLocation(int index)
-        {
-            if (index > _Locations.Length - 1)
-                return null;
-
-            return _Locations[index];
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="alignment"></param>
-        /// <param name="location"></param>
-        /// <returns>null if not present or the Chef at Chef.CurrentPosition == location</returns>
-        public Chef GetChefAtLocation(int location)
-        {
-            foreach (Chef c in Chefs)
-                if (c.CurrentPosition == location)
-                    return c;
-
-            Debug.LogError("No chef at this location");
-            return null;
-        }
-
-        public void MoveAllChefs()
-        {
-            MoveChefs(BackOfTheLineIndex, 0);
-        }
-
-        public void MoveChefsBehindThis(Chef c)
-        {
-            if(c.CurrentPosition != BackOfTheLineIndex)
-                MoveChefs(BackOfTheLineIndex, c.CurrentPosition + 1);
-        }
-
-        private void MoveChefs(int startIndex, int endIndex)
-        {
-            if (!MovementStopped)
-                return;
-
-            MovementStopped = false;
-            Invoker.WaitThanCallback(() => { MovementStopped = true; }, Chef.ChefMovespeed);
-
-            if (!this.MovementStopped)
+            if (ClosestSlot == null)
             {
-                    for (int i = startIndex; i >= endIndex; i--)
-                        if (!MovementStopped) GetChefAtLocation(i).Move();
+                ClosestSlot = new GameObject("ClosestSlot").transform;
+                ClosestSlot.tag = Tags.ChefLocation;
+
+                if (Side == ScreenSide.Left)
+                    ClosestSlot.transform.position = new Vector3(-2, Player.Instance.transform.position.y, 0);
+                else
+                    ClosestSlot.transform.position = new Vector3(2, Player.Instance.transform.position.y, 0);
+
+                ClosestSlot.parent = transform;
             }
+        }
+
+        public void MoveAll()
+        {
+            ChefLocations.Shift(false);
+            for (int currentChef = 0; currentChef < Chefs.Count; currentChef++)
+                Chefs[currentChef].TargetPosition = ChefLocations[currentChef];
+        }
+
+        private void UpdateChefLocations()
+        {
+            DestroyAllChefLocations();
+
+            float VerticalScale = Camera.main.orthographicSize * 2;
+            float HorizontalScale = VerticalScale * Camera.main.aspect;
+
+            Vector2 otherEnd = Vector2.zero;
+
+            if (Side == ScreenSide.Right)
+                otherEnd = new Vector2(HorizontalScale / 2, ClosestSlot.position.y);
+            else
+                otherEnd = new Vector2(-HorizontalScale / 2, ClosestSlot.position.y);
+
+            ChefLocations = new List<Transform>();
+
+            ChefLocationsGroup = new GameObject("Chef Locations Group");
+            ChefLocationsGroup.transform.parent = transform;
+            ChefLocationsGroup.transform.localPosition = Vector3.zero;
+
+            Vector2 currentLocation = ClosestSlot.position;
+            int index = 0;
+            if (Side == ScreenSide.Right)
+            {
+                while (currentLocation.x <= otherEnd.x + 2f)
+                {
+                    Transform newLocation = new GameObject(index++.ToString()).transform;
+                    newLocation.transform.parent = ChefLocationsGroup.transform;
+                    newLocation.transform.position = currentLocation;
+                    ChefLocations.Add(newLocation);
+                    currentLocation.x += 2;
+                }
+            }
+            else
+            {
+                while (currentLocation.x >= otherEnd.x - 2f)
+                {
+                    Transform newLocation = new GameObject(index++.ToString()).transform;
+                    newLocation.transform.parent = ChefLocationsGroup.transform;
+                    newLocation.transform.position = currentLocation;
+                    ChefLocations.Add(newLocation);
+                    currentLocation.x -= 2;
+                }
+            }
+
+            Camera.main.transform.hasChanged = false; //if the camera position has changed, the screen can hold more chefs, this is checked on the FixedUpdate function.
+        }
+
+        void FixedUpdate()
+        {
+            if (Camera.main.transform.hasChanged)
+                UpdateChefLocations();
+        }
+
+        private void DestroyAllChefLocations()
+        {
+            if (ChefLocations == null || ChefLocations.Count == 0)
+            {
+                ChefLocations = new List<Transform>();
+                return;
+            }
+
+            foreach (Transform t in ChefLocations)
+                Destroy(t.gameObject);
+
+           if(ChefLocationsGroup != null)
+                Destroy(ChefLocationsGroup);
+
+            ChefLocations.Clear();
+            ChefLocations = null;
+            ChefLocations = new List<Transform>();
+        }
+
+        public void EatFood(Chef c, Food food)
+        {
+            GameController.Instance.FoodEaten(c, food, true);
+        }
+
+        public void SendToBack(Chef c)
+        {
+
         }
     }
 }

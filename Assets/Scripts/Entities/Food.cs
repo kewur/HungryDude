@@ -18,6 +18,13 @@ namespace Assets.Scripts.Entities
         Poo
     }
 
+    public enum FoodPowerUps
+    {
+        Explode,
+        Double,
+        Advertisiment
+    }
+
     public delegate void FoodInteractDelegate(FoodInteractedEventArgs e); 
 
     [RequireComponent(typeof(BoxCollider))]
@@ -42,6 +49,26 @@ namespace Assets.Scripts.Entities
             }
         }
 
+        private bool _IsLocked = false;
+        public bool IsLocked
+        {
+            get
+            {
+                return _IsLocked;
+            }
+
+            set
+            {
+                if (_IsLocked == value)
+                    return;
+
+                _IsLocked = value;
+
+                if(_SpriteRenderer != null)
+                    _SpriteRenderer.enabled = !value;
+            }
+        }
+
         private SpriteRenderer _SpriteRenderer = null;
         public SpriteRenderer SpriteRenderer
         {
@@ -62,29 +89,22 @@ namespace Assets.Scripts.Entities
             private set { _FoodCollider = value; }
         }
 
-        private bool _GoldFood;
-        public bool GoldFood
+        private FoodPowerUps _PowerUp;
+        public FoodPowerUps PowerUp
         {
-            get { return _GoldFood; }
-            set
-            {
-                if (_GoldFood == value)
-                    return;
-
-                _GoldFood = value;
-                //TODO set material detail to gold.
-            }
+            get { return _PowerUp; }
+            set { _PowerUp = value; }
         }
-
+        
         void Awake()
         {
             SpriteRenderer = GetComponent<SpriteRenderer>();
             SpriteRenderer.sortingOrder = 2;
 
-            if (GameController.Instance.PooEnabled && UnityEngine.Random.Range(0, 100) < GameController.PooChance)
+            if (GameController.Instance.PooEnabled && CryptoRandom.DefaultRandom.Next(0, 100) < GameController.PooChance)
                 FoodType = FoodTypes.Poo;
             else
-                FoodType = (FoodTypes)UnityEngine.Random.Range(0, (int)Enum.GetValues(typeof(FoodTypes)).Cast<FoodTypes>().Last());
+                FoodType = (FoodTypes)CryptoRandom.DefaultRandom.Next(0, (int)Enum.GetValues(typeof(FoodTypes)).Cast<FoodTypes>().Last());
 
             FoodCollider.size = new Vector3(1.5f, 1, 0.1f);
 
@@ -96,11 +116,13 @@ namespace Assets.Scripts.Entities
 
         public override void Interact()
         {
-            if (Player.Instance.Eating)
-                DropFood();
+            if (IsLocked)
+                return;
 
             if (OnInteraction != null)
                 OnInteraction(new FoodInteractedEventArgs(this));
+
+            DropFood();
         }
 
         public void DropFood()
@@ -136,6 +158,11 @@ namespace Assets.Scripts.Entities
         public static Texture GetFoodImageUI(FoodTypes foodType)
         {
             return Resources.Load<Texture>(foodType.ToString() + "UI");
+        }
+
+        public static Food CreateRandomFood()
+        {
+            return new GameObject("Food").AddComponent<Food>();
         }
     }
 }
