@@ -15,5 +15,7 @@ namespace Assets.Scripts.Utilities
         public const string PooBar = "PooBar";
         public const string PowerBar = "PowerBar";
         public const string FoodPosition = "FoodPosition";
+        public const string FoodCover = "FoodCover";
+        public const string MainUIPanel = "MainUIPanel";
     }
 }

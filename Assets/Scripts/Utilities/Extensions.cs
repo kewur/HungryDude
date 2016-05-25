@@ -33,14 +33,6 @@ namespace Assets.Scripts.Utilities
             return null;
         }
 
-        public static ChefAlignment GetOppositeDirection(this ChefAlignment align)
-        {
-            if (align == ChefAlignment.Left)
-                return ChefAlignment.Right;
-            else
-                return ChefAlignment.Left;
-        }
-
         public static bool Equal(this float f, float other, float sensitivity = 0.01f)
         {
             if (other < f + sensitivity && other > f - sensitivity)

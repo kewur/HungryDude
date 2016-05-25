@@ -38,6 +38,22 @@ namespace Assets.Scripts.Controllers
             }
         }
 
+        public int OpenFoodCoverAmount
+        {
+            get
+            {
+                return 3;
+            }
+        }
+
+        public float OpenFoodCoverTime
+        {
+            get
+            {
+                return 3f;
+            }
+        }
+
         public const string EatMirroredFoodsPropertyName = "EatMirroredFoods";
         private bool _EatMirroredFoods = true;
         public bool EatMirroredFoods
@@ -205,6 +221,12 @@ namespace Assets.Scripts.Controllers
 
         }
 
+        public void StartRound()
+        {
+            CreateObjectives();
+            CountdownBar.Instance.TargetValue = 100;
+        }
+
         public const string CurrentObjectivesPropertyName = "CurrentObjectives";
         private ObservableCollection<FoodObjective> _CurrentObjectives = new ObservableCollection<FoodObjective>();
         public ObservableCollection<FoodObjective> CurrentObjectives
@@ -231,7 +253,7 @@ namespace Assets.Scripts.Controllers
 
         public void Start()
         {
-            CreateObjectives();
+            StartRound();
         }
 
         public void AddScore(int score)

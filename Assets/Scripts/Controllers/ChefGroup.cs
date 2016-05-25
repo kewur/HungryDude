@@ -1,4 +1,5 @@
 ﻿using Assets.Scripts.Entities;
+using Assets.Scripts.UI.Bars;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,27 +10,39 @@ namespace Assets.Scripts.Controllers
 {
     public class ChefGroup : MonoBehaviour
     {
-        public ChefAlignment Side1;
-        public ChefsController Side1Controller;
-
-        public ChefAlignment Side2;
-        public ChefsController Side2Controller;
-
-        void Awake()
+        Dictionary<ScreenSide, List<ChefsController>> _Controllers = new Dictionary<ScreenSide, List<ChefsController>>();
+        public Dictionary<ScreenSide, List<ChefsController>> Controllers
         {
-            
+            get
+            {
+                return _Controllers;
+            }
         }
 
-        public ChefsController GetMirrorController(ChefAlignment side)
+        void Start()
         {
-            if (Side1 == side)
-                return Side2Controller;
+            CountdownBar.Instance.Groups.Add(this);
+        }
 
-            if (Side2 == side)
-                return Side1Controller;
+        public List<ChefsController> GetMirrorController(ScreenSide side)
+        {
+            if(!_Controllers.ContainsKey(side))
+                return null;
 
-            return null;
-        } 
+            return _Controllers[side];
+        }
+
+        public void ResetFoodCovers()
+        {
+            foreach (KeyValuePair<ScreenSide, List<ChefsController>> keyValue in _Controllers)
+            {
+                foreach (ChefsController cont in keyValue.Value)
+                {
+                    cont.CoverAllFood();
+                    cont.OpenFoodsAtRandom(GameController.Instance.OpenFoodCoverAmount);
+                }
+            }
+        }
 
     }
 }

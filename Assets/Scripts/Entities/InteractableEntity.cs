@@ -7,13 +7,6 @@ using Assets.Scripts.Entities.Interfaces;
 
 namespace Assets.Scripts.Entities
 {
-
-    public enum ChefAlignment
-    {
-        Left,
-        Right
-    }
-
     public abstract class InteractableEntity : MonoBehaviour, IInteractable
     {
         protected virtual void Update()

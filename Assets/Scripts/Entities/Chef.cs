@@ -22,7 +22,20 @@ namespace Assets.Scripts.Entities
     [RequireComponent(typeof(SpriteRenderer))]
     public class Chef : InteractableEntity
     {
+        private static GameObject _FoodCoverPrefab = Resources.Load<GameObject>("FoodCover");
+
         private ChefsController _Controller;
+        protected ChefsController Controller
+        {
+            get
+            {
+                if (_Controller == null)
+                    _Controller = GetComponentInParent<ChefsController>();
+
+                return _Controller;
+            }
+        }
+
         private SpriteRenderer _Sprite;
         private Transform _FoodSlot;
         private GameObject _FoodCover;
@@ -91,31 +104,68 @@ namespace Assets.Scripts.Entities
             }
         }
 
-        public static float SmoothMovement = 8f;
-
-        private void FoodEatenCallBack(FoodInteractedEventArgs e)
-        {
-            Food f = e.Source as Food;
-            _Controller.EatFood(this, f);
-
-            CarryingFood = Food.CreateRandomFood(); // create a new one.
-        }
+        public static float SmoothMovement = 3.8f;
 
         private void Awake()
         {
-            _Controller = GetComponentInParent<ChefsController>();
             _Sprite = GetComponent<SpriteRenderer>();
 
             InitializeFoodSlot();
+            InitialzieFoodCover();
+
             CarryingFood = Food.CreateRandomFood();
 
             ResetChefType();
         }
 
+        private void FoodEatenCallBack(FoodInteractedEventArgs e)
+        {
+            Food f = e.Source as Food;
+            Controller.EatFood(this, f);
+
+            CarryingFood = Food.CreateRandomFood(); // create a new one.
+        }
+
         private void FixedUpdate()
         {
-            if(TargetPosition != null)
+            if (TargetPosition != null)
+            {
                 transform.position = Vector3.Lerp(transform.position, TargetPosition.position, SmoothMovement * Time.deltaTime);
+
+                AdjustFacingDirection();
+            }
+        }
+
+        private void AdjustFacingDirection()
+        {
+            if (Controller.Side == ScreenSide.Left)
+            {
+                if (TargetPosition.position.x + 0.1f < transform.position.x)
+                {
+                    transform.localScale = Vector3.one;
+                    _Sprite.sortingOrder = -1;
+                }
+                else
+                {
+                    transform.localScale = new Vector3(-1, 1, 1);
+                    _Sprite.sortingOrder = 0;
+                }
+            }
+
+            else
+            {
+                if (TargetPosition.position.x - 0.1f > transform.position.x)
+                {
+                    transform.localScale = new Vector3(-1, 1, 1);
+                    _Sprite.sortingOrder = -1;
+                }
+                else
+                {
+                    transform.localScale = Vector3.one;
+                    _Sprite.sortingOrder = 0;
+                }
+
+            }
         }
 
         private void InitializeFoodSlot()
@@ -128,6 +178,17 @@ namespace Assets.Scripts.Entities
             }
         }
 
+        private void InitialzieFoodCover()
+        {
+            if (_FoodSlot == null)
+                InitializeFoodSlot();
+
+            _FoodCover = Instantiate(_FoodCoverPrefab);
+            _FoodCover.tag = Tags.FoodCover;
+            _FoodCover.transform.parent = _FoodSlot;
+            _FoodCover.transform.localPosition = Vector3.zero;
+        }
+
         public void CoverFood(bool cover)
         {
             if (_CarryingFood != null)
@@ -138,7 +199,7 @@ namespace Assets.Scripts.Entities
 
         public override void Interact()
         {
-            _Controller.SendToBack(this);
+            Controller.SendToBack(this);
         }
 
         public void ResetChefType()
